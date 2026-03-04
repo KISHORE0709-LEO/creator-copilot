@@ -5,13 +5,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDNElwfTavB4VrNK4UgJM_-BLpYmAga_RM",
-  authDomain: "creator-copilot-5db3a.firebaseapp.com",
-  projectId: "creator-copilot-5db3a",
-  storageBucket: "creator-copilot-5db3a.firebasestorage.app",
-  messagingSenderId: "1005216430699",
-  appId: "1:1005216430699:web:1172e9ac1b906ee6cb0f2e",
-  measurementId: "G-GTSLFQ48MB"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
