@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import DashboardLayout from "./components/DashboardLayout";
@@ -13,8 +13,16 @@ import TrendsCalendar from "./pages/TrendsCalendar";
 import SafetyCopyright from "./pages/SafetyCopyright";
 import MonetizationEngagement from "./pages/MonetizationEngagement";
 import NotFound from "./pages/NotFound";
+import ChatbotRobot from "./components/ChatbotRobot";
 
 const queryClient = new QueryClient();
+
+function ChatbotWrapper() {
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+  
+  return !isLandingPage ? <ChatbotRobot /> : null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -22,6 +30,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ChatbotWrapper />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />

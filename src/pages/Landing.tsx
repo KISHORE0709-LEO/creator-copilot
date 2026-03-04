@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Sparkles, BarChart3, Palette, Shield, TrendingUp, DollarSign, Zap } from "lucide-react";
 import heroDashboard from "@/assets/hero-dashboard.jpg";
+import SplineRobot from "@/components/SplineRobot";
 
 const features = [
   { icon: BarChart3, title: "Content Analyzer", desc: "Get instant AI-powered scores on engagement, clarity, and hook strength for any post." },
@@ -43,31 +44,39 @@ const Landing = () => {
           </button>
         </nav>
 
-        {/* Hero content */}
-        <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-12 lg:pl-20 w-full">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6">
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-medium text-primary">AI-Powered Content Platform</span>
+        {/* Hero content with robot */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between gap-12">
+          {/* Left content */}
+          <div className="flex-1 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs font-medium text-primary">AI-Powered Content Platform</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold text-foreground mb-5 leading-[1.1] tracking-tight">
+              Your AI-powered<br />content team
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-lg mb-8 leading-relaxed">
+              Plan, analyze, create, and monetize your content — all from one intelligent dashboard built for modern creators.
+            </p>
+            <div className="flex flex-col sm:flex-row items-start gap-3">
+              <button
+                onClick={() => navigate("/auth?tab=signup")}
+                className="px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-primary/20"
+              >
+                Get Started Free →
+              </button>
+              <button
+                onClick={() => navigate("/auth?tab=signin")}
+                className="px-8 py-3.5 rounded-lg bg-secondary text-foreground font-medium text-sm border border-border hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                Sign In
+              </button>
+            </div>
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold text-foreground mb-5 leading-[1.1] tracking-tight">
-            Your AI-powered<br />content team
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-lg mb-8 leading-relaxed">
-            Plan, analyze, create, and monetize your content — all from one intelligent dashboard built for modern creators.
-          </p>
-          <div className="flex flex-col sm:flex-row items-start gap-3">
-            <button
-              onClick={() => navigate("/auth?tab=signup")}
-              className="px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-primary/20"
-            >
-              Get Started Free →
-            </button>
-            <button
-              onClick={() => navigate("/auth?tab=signin")}
-              className="px-8 py-3.5 rounded-lg bg-secondary text-foreground font-medium text-sm border border-border hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200"
-            >
-              Sign In
-            </button>
+
+          {/* Right robot */}
+          <div className="hidden lg:block flex-shrink-0 w-[500px] h-[600px]">
+            <SplineRobot />
           </div>
         </div>
       </section>

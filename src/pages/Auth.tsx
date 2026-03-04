@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
+import { signUp, signIn, signInWithGoogle } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -8,15 +10,37 @@ const Auth = () => {
   const [tab, setTab] = useState<"signin" | "signup">(defaultTab as any);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      if (tab === "signup") {
+        await signUp(formData.email, formData.password, formData.name);
+        toast({ title: "Account created successfully!" });
+      } else {
+        await signIn(formData.email, formData.password);
+        toast({ title: "Welcome back!" });
+      }
       navigate("/dashboard");
-    }, 1200);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      toast({ title: "Signed in with Google!" });
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
   };
 
   return (
@@ -57,6 +81,8 @@ const Auth = () => {
                 <input
                   type="text"
                   placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
                   className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all"
                 />
               </div>
@@ -66,6 +92,8 @@ const Auth = () => {
               <input
                 type="email"
                 placeholder="you@example.com"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
                 className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all"
               />
             </div>
@@ -75,6 +103,8 @@ const Auth = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
                   className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all pr-10"
                 />
                 <button
@@ -108,7 +138,7 @@ const Auth = () => {
           </div>
 
           {/* Google */}
-          <button className="w-full py-3 rounded-lg bg-secondary border border-border text-foreground font-medium text-sm hover:border-primary/50 transition-all flex items-center justify-center gap-2">
+          <button onClick={handleGoogleSignIn} type="button" className="w-full py-3 rounded-lg bg-secondary border border-border text-foreground font-medium text-sm hover:border-primary/50 transition-all flex items-center justify-center gap-2">
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
