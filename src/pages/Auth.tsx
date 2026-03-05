@@ -10,7 +10,12 @@ const Auth = () => {
   const [tab, setTab] = useState<"signin" | "signup">(defaultTab as any);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    email: "", 
+    password: "", 
+    gender: "male" as "male" | "female" 
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -19,7 +24,7 @@ const Auth = () => {
     setLoading(true);
     try {
       if (tab === "signup") {
-        await signUp(formData.email, formData.password, formData.name);
+        await signUp(formData.email, formData.password, formData.name, formData.gender);
         toast({ title: "Account created successfully!" });
       } else {
         await signIn(formData.email, formData.password);
@@ -76,16 +81,45 @@ const Auth = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {tab === "signup" && (
-              <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Full Name</label>
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Gender</label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, gender: "male"})}
+                      className={`flex-1 py-3 px-4 rounded-lg border transition-all text-sm font-medium ${
+                        formData.gender === "male" 
+                          ? "bg-primary/10 border-primary text-primary" 
+                          : "bg-surface-input border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Male
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, gender: "female"})}
+                      className={`flex-1 py-3 px-4 rounded-lg border transition-all text-sm font-medium ${
+                        formData.gender === "female" 
+                          ? "bg-primary/10 border-primary text-primary" 
+                          : "bg-surface-input border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Female
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
             <div>
               <label className="text-sm text-muted-foreground mb-1.5 block">Email</label>

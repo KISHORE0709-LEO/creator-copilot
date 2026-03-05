@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { logOut } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
+import { generateInitialsAvatar } from "@/lib/avatars";
 import {
   LayoutDashboard,
   Search,
@@ -13,6 +17,7 @@ import {
   Bell,
   ChevronLeft,
   Menu,
+  User,
 } from "lucide-react";
 
 const navItems = [
@@ -31,11 +36,14 @@ const pageTitles: Record<string, string> = {
   "/dashboard/trends": "Trends & Calendar",
   "/dashboard/safety": "Safety & Copyright",
   "/dashboard/monetization": "Monetization & Engagement",
+  "/dashboard/profile": "Profile",
 };
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, userProfile } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -47,6 +55,35 @@ const DashboardLayout = () => {
     if (hour < 12) return "Good morning";
     if (hour < 17) return "Good afternoon";
     return "Good evening";
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      navigate("/");
+      toast({ title: "Logged out successfully" });
+    } catch (error) {
+      toast({ title: "Error logging out", variant: "destructive" });
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getUserDisplayName = () => {
+    return userProfile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'User';
+  };
+
+  const getUserInitials = () => {
+    const name = getUserDisplayName();
+    const { initials, colorClass } = generateInitialsAvatar(name);
+    return { initials, colorClass };
   };
 
   const SidebarContent = () => (
@@ -64,16 +101,24 @@ const DashboardLayout = () => {
       {sidebarOpen && (
         <div className="px-4 py-3 mx-3 rounded-lg bg-secondary mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm flex-shrink-0">
-              K
-            </div>
+            {userProfile?.photoURL ? (
+              <img
+                src={userProfile.photoURL}
+                alt={getUserDisplayName()}
+                className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className={`w-9 h-9 rounded-full ${getUserInitials().colorClass} flex items-center justify-center text-white font-heading font-bold text-sm flex-shrink-0`}>
+                {getUserInitials().initials}
+              </div>
+            )}
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">Kishore</p>
-              <p className="text-xs text-muted-foreground truncate">@kishore</p>
+              <p className="text-sm font-semibold text-foreground truncate">{getUserDisplayName()}</p>
+              <p className="text-xs text-muted-foreground truncate">@{getUserDisplayName().toLowerCase().replace(/\s+/g, '')}</p>
             </div>
           </div>
-          <span className="inline-block mt-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-            Tech Creator
+          <span className="inline-block mt-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium capitalize">
+            {userProfile?.subscription || 'Free'} Plan
           </span>
         </div>
       )}
@@ -104,12 +149,22 @@ const DashboardLayout = () => {
 
       {/* Bottom */}
       <div className="px-2 pb-4 space-y-1 border-t border-border pt-3 mt-3">
+        <button 
+          onClick={() => {
+            navigate("/dashboard/profile");
+            setMobileOpen(false);
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+        >
+          <User className="w-5 h-5 flex-shrink-0" />
+          {sidebarOpen && <span>Profile</span>}
+        </button>
         <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
           <Settings className="w-5 h-5 flex-shrink-0" />
           {sidebarOpen && <span>Settings</span>}
         </button>
         <button
-          onClick={() => navigate("/")}
+          onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
@@ -160,14 +215,27 @@ const DashboardLayout = () => {
           </div>
           <div className="flex items-center gap-4">
             <span className="hidden sm:block text-sm text-muted-foreground">
-              {getGreeting()}, <span className="text-foreground font-medium">Kishore</span> 👋
+              {getGreeting()}, <span className="text-foreground font-medium">{getUserDisplayName()}</span> 👋
             </span>
             <button className="relative text-muted-foreground hover:text-foreground transition-colors">
               <Bell className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
             </button>
-            <button className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-heading font-bold text-xs">
-              K
+            <button 
+              onClick={() => navigate("/dashboard/profile")}
+              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-primary/30 transition-colors"
+            >
+              {userProfile?.photoURL ? (
+                <img
+                  src={userProfile.photoURL}
+                  alt={getUserDisplayName()}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className={`w-8 h-8 rounded-full ${getUserInitials().colorClass} flex items-center justify-center text-white font-heading font-bold text-xs`}>
+                  {getUserInitials().initials}
+                </div>
+              )}
             </button>
           </div>
         </header>
