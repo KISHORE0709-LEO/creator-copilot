@@ -12,35 +12,12 @@ dist
 dist-ssr
 *.local
 
-# Environment variables - CRITICAL: Never commit these!
+# Environment variables
 .env
 .env.local
 .env.*.local
 .env.production
 .env.development
-.env.test
-.env.example.gemini
-*.env
-
-# Firebase config files
-firebase.json
-.firebaserc
-firebase-debug.log
-firestore.rules
-firestore.indexes.json
-
-# API Keys and Secrets
-config/keys.js
-config/prod.js
-secrets/
-*.pem
-*.key
-*.crt
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
 
 # Editor directories and files
 .vscode/*
@@ -52,21 +29,3 @@ secrets/
 *.njsproj
 *.sln
 *.sw?
-
-# OS generated files
-Thumbs.db
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-
-# Temporary files
-*.tmp
-*.temp
-.cache/
-
-# Build outputs
-build/
-out/
