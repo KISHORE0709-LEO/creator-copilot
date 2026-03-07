@@ -6,21 +6,44 @@ export default function ChatbotRobot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{text: string, isUser: boolean}[]>([]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
     
-    setMessages([...messages, { text: input, isUser: true }]);
+    const userMessage = input;
+    setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
+    setInput('');
+    setLoading(true);
     
-    // Simulate bot response
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:3001/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          conversationHistory: messages
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Chat failed');
+      }
+
+      const data = await response.json();
       setMessages(prev => [...prev, { 
-        text: "I can help you navigate the website! We have Content Analyzer, Content Studio, Safety & Copyright, Trend Intelligence, Monetization, and Smart Calendar features. What would you like to know more about?", 
+        text: data.response, 
         isUser: false 
       }]);
-    }, 500);
-    
-    setInput('');
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, { 
+        text: "I'm having trouble connecting right now. Please try again in a moment!", 
+        isUser: false 
+      }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,6 +85,13 @@ export default function ChatbotRobot() {
                 </div>
               </div>
             ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] p-3 rounded-lg text-sm bg-secondary text-foreground">
+                  <span className="dot-bounce"><span /><span /><span /></span>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="p-4 border-t border-border">
@@ -69,11 +99,16 @@ export default function ChatbotRobot() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                onKeyPress={(e) => e.key === 'Enter' && !loading && handleSend()}
                 placeholder="Ask about features..."
-                className="flex-1 px-3 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
+                disabled={loading}
+                className="flex-1 px-3 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
               />
-              <button onClick={handleSend} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">
+              <button 
+                onClick={handleSend} 
+                disabled={loading || !input.trim()}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
                 <Send className="w-4 h-4" />
               </button>
             </div>

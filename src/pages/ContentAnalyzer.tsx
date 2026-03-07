@@ -27,7 +27,7 @@ const ContentAnalyzer = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/analyze-content', {
+      const response = await fetch('http://localhost:3001/api/analyze-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content, platform, region })
