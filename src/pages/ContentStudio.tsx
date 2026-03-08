@@ -127,7 +127,7 @@ const ContentStudio = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/generate-hook', {
+      const response = await fetch(import.meta.env.VITE_LAMBDA_GENERATE_HOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(hookFormData)
@@ -167,7 +167,7 @@ const ContentStudio = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/generate-assembly', {
+      const response = await fetch(import.meta.env.VITE_LAMBDA_GENERATE_ASSEMBLY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(assemblyFormData)
@@ -207,7 +207,7 @@ const ContentStudio = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/translate-content', {
+      const response = await fetch(import.meta.env.VITE_LAMBDA_TRANSLATE_CONTENT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(translationFormData)
