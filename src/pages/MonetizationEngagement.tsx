@@ -1,53 +1,136 @@
 import { useState } from "react";
-import { DollarSign, TrendingUp, MessageSquare, AlertTriangle, Sparkles, Clock } from "lucide-react";
+import { DollarSign, TrendingUp, MessageSquare, AlertTriangle, Sparkles, Clock, Copy, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { analyzePromotionTiming, predictMonetization, analyzeComments } from "@/lib/lambda";
 
 const MonetizationEngagement = () => {
+  const { toast } = useToast();
+  
+  const [promoForm, setPromoForm] = useState({ contentDescription: "", brand: "", length: "", contentType: "YouTube Video" });
   const [promoLoading, setPromoLoading] = useState(false);
-  const [promoGenerated, setPromoGenerated] = useState(false);
+  const [promoResult, setPromoResult] = useState<any>(null);
+
+  const [monetForm, setMonetForm] = useState({ topic: "", reach: "", audience: "", platform: "YouTube" });
   const [monetLoading, setMonetLoading] = useState(false);
-  const [monetGenerated, setMonetGenerated] = useState(false);
+  const [monetResult, setMonetResult] = useState<any>(null);
+
+  const [comments, setComments] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
-  const [commentGenerated, setCommentGenerated] = useState(false);
+  const [commentResult, setCommentResult] = useState<any>(null);
+  const [copiedReply, setCopiedReply] = useState<string | null>(null);
+
+  const handlePromoAnalysis = async () => {
+    if (!promoForm.contentDescription || !promoForm.brand || !promoForm.length) {
+      toast({ title: "Missing Fields", description: "Please fill all fields", variant: "destructive" });
+      return;
+    }
+    setPromoLoading(true);
+    try {
+      const response = await analyzePromotionTiming({ ...promoForm, length: parseInt(promoForm.length) });
+      setPromoResult(response.analysis);
+      toast({ title: "✅ Analysis Complete", description: "Promotional timing suggestions ready" });
+    } catch (error) {
+      toast({ title: "Analysis Failed", description: error instanceof Error ? error.message : "Try again", variant: "destructive" });
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleMonetPrediction = async () => {
+    if (!monetForm.topic || !monetForm.reach || !monetForm.audience) {
+      toast({ title: "Missing Fields", description: "Please fill all fields", variant: "destructive" });
+      return;
+    }
+    setMonetLoading(true);
+    try {
+      const response = await predictMonetization(monetForm);
+      setMonetResult(response.prediction);
+      toast({ title: "✅ Prediction Complete", description: "Monetization insights ready" });
+    } catch (error) {
+      toast({ title: "Prediction Failed", description: error instanceof Error ? error.message : "Try again", variant: "destructive" });
+    } finally {
+      setMonetLoading(false);
+    }
+  };
+
+  const handleCommentAnalysis = async () => {
+    if (!comments.trim()) {
+      toast({ title: "No Comments", description: "Please paste comments to analyze", variant: "destructive" });
+      return;
+    }
+    setCommentLoading(true);
+    try {
+      const commentArray = comments.split('\n').filter(c => c.trim());
+      const response = await analyzeComments({ comments: commentArray });
+      setCommentResult(response.analysis);
+      toast({ title: "✅ Analysis Complete", description: "Comment insights ready" });
+    } catch (error) {
+      toast({ title: "Analysis Failed", description: error instanceof Error ? error.message : "Try again", variant: "destructive" });
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  const copyReply = (reply: string) => {
+    navigator.clipboard.writeText(reply);
+    setCopiedReply(reply);
+    toast({ title: "Copied!", description: "Reply copied to clipboard" });
+    setTimeout(() => setCopiedReply(null), 2000);
+  };
+
+  const loadExample = (type: 'promo' | 'monet' | 'comment') => {
+    if (type === 'promo') {
+      setPromoForm({ contentDescription: "Complete tutorial on building AI chatbots with Python and OpenAI API", brand: "Notion", length: "12", contentType: "YouTube Video" });
+    } else if (type === 'monet') {
+      setMonetForm({ topic: "AI and Automation", reach: "50K-100K", audience: "Tech professionals, 25-40 years", platform: "YouTube" });
+    } else {
+      setComments("This is amazing! Thanks for the tutorial\nPlease make part 2\nThe link doesn't work for me\nBUY CHEAP FOLLOWERS NOW!!!\nThis is garbage\nVery helpful, subscribed!");
+    }
+  };
 
   return (
     <div className="space-y-8 pb-20 md:pb-0">
-      {/* Section 1 — Promotional Timing */}
+      {/* Promotional Timing */}
       <section className="space-y-4">
-        <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-          <Clock className="w-5 h-5 text-primary" />
-          Promotional Timing Advisor
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
+            Promotional Timing Advisor
+          </h3>
+          <button onClick={() => loadExample('promo')} className="text-xs text-primary hover:text-primary/80">Load Example</button>
+        </div>
         <div className="card-surface p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input placeholder="Content description (e.g., Tech review video)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
-            <input placeholder="Product/brand name" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
-            <input placeholder="Length (e.g., 10 min, 500 words)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
+            <input value={promoForm.contentDescription} onChange={(e) => setPromoForm({...promoForm, contentDescription: e.target.value})} placeholder="Content description (e.g., Tech review video)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
+            <input value={promoForm.brand} onChange={(e) => setPromoForm({...promoForm, brand: e.target.value})} placeholder="Product/brand name" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
+            <input value={promoForm.length} onChange={(e) => setPromoForm({...promoForm, length: e.target.value})} placeholder="Length (minutes)" type="number" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
           </div>
-          <button onClick={() => { setPromoLoading(true); setTimeout(() => { setPromoLoading(false); setPromoGenerated(true); }, 1000); }} disabled={promoLoading} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 flex items-center gap-2">
+          <button onClick={handlePromoAnalysis} disabled={promoLoading} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 flex items-center gap-2">
             {promoLoading ? <span className="dot-bounce"><span /><span /><span /></span> : <><Sparkles className="w-4 h-4" />Analyze Timing</>}
           </button>
         </div>
-        {promoGenerated && (
+        {promoResult && (
           <div className="card-surface p-5 animate-fade-in space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Optimal promo placement in your content:</p>
-              <div className="relative h-4 bg-secondary rounded-full overflow-hidden">
-                <div className="absolute h-full bg-primary/20 rounded-full" style={{ width: "100%" }} />
-                <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full shadow-lg shadow-primary/30" style={{ left: "35%" }} />
+            <h4 className="font-heading text-sm font-bold text-foreground">Recommended Placements</h4>
+            {promoResult.placements?.map((p: any, i: number) => (
+              <div key={i} className="p-4 rounded-lg bg-secondary border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-primary">{p.timestamp}</span>
+                  <span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{p.type}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">{p.reason}</p>
+                <div className="p-2 rounded bg-surface-input border border-border">
+                  <p className="text-xs text-foreground italic">"{p.example}"</p>
+                </div>
               </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-[10px] text-muted-foreground">Start</span>
-                <span className="text-xs text-primary font-bold">35% mark</span>
-                <span className="text-[10px] text-muted-foreground">End</span>
+            ))}
+            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <h5 className="text-sm font-bold text-foreground mb-2">Risk Assessment</h5>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div><p className="text-xs text-muted-foreground">Intrusiveness</p><p className="text-lg font-bold text-primary">{promoResult.riskScore?.intrusiveness}%</p></div>
+                <div><p className="text-xs text-muted-foreground">Retention Risk</p><p className="text-lg font-bold text-green-500">{promoResult.riskScore?.retentionRisk}</p></div>
+                <div><p className="text-xs text-muted-foreground">Authenticity</p><p className="text-lg font-bold text-primary">{promoResult.riskScore?.authenticityScore}</p></div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Best posting time:</span>
-              <span className="px-3 py-1 rounded-full bg-accent-blue/10 text-accent-blue text-sm font-bold">Thursday 6:00 PM IST</span>
-            </div>
-            <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-sm text-yellow-400 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Audience drop-off risk: Placing promo before the 2-minute mark may reduce retention by 20%.</span>
             </div>
           </div>
         )}
@@ -55,56 +138,49 @@ const MonetizationEngagement = () => {
 
       <div className="h-px bg-border" />
 
-      {/* Section 2 — Monetization Predictor */}
+      {/* Monetization Predictor */}
       <section className="space-y-4">
-        <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-primary" />
-          Monetization Predictor
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-primary" />
+            Monetization Predictor
+          </h3>
+          <button onClick={() => loadExample('monet')} className="text-xs text-primary hover:text-primary/80">Load Example</button>
+        </div>
         <div className="card-surface p-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input placeholder="Topic (e.g., AI tools)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
-            <input placeholder="Monthly reach (e.g., 50K)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
-            <input placeholder="Audience (e.g., 18-35 males, India)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input value={monetForm.topic} onChange={(e) => setMonetForm({...monetForm, topic: e.target.value})} placeholder="Topic (e.g., AI tools)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
+            <input value={monetForm.reach} onChange={(e) => setMonetForm({...monetForm, reach: e.target.value})} placeholder="Monthly reach (e.g., 50K)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
+            <input value={monetForm.audience} onChange={(e) => setMonetForm({...monetForm, audience: e.target.value})} placeholder="Audience (e.g., 18-35 males, India)" className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
+            <select value={monetForm.platform} onChange={(e) => setMonetForm({...monetForm, platform: e.target.value})} className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all">
+              <option>YouTube</option><option>Instagram</option><option>LinkedIn</option><option>TikTok</option><option>X (Twitter)</option>
+            </select>
           </div>
-          <button onClick={() => { setMonetLoading(true); setTimeout(() => { setMonetLoading(false); setMonetGenerated(true); }, 1000); }} disabled={monetLoading} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 flex items-center gap-2">
+          <button onClick={handleMonetPrediction} disabled={monetLoading} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 flex items-center gap-2">
             {monetLoading ? <span className="dot-bounce"><span /><span /><span /></span> : <><TrendingUp className="w-4 h-4" />Predict Earnings</>}
           </button>
         </div>
-        {monetGenerated && (
+        {monetResult && (
           <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Monetization Score:</span>
-              <span className="font-heading text-3xl font-extrabold text-primary">7.8</span>
-              <span className="text-sm text-muted-foreground">/ 10</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Ad Revenue", range: "₹15K–₹40K/mo" },
-                { label: "Brand Deals", range: "₹25K–₹80K/mo" },
-                { label: "Affiliates", range: "₹10K–₹30K/mo" },
-                { label: "Digital Products", range: "₹5K–₹50K/mo" },
-              ].map((e) => (
-                <div key={e.label} className="card-surface p-4 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">{e.label}</p>
-                  <p className="font-heading text-sm font-bold text-primary">{e.range}</p>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {["SaaS Companies", "EdTech Brands", "Dev Tools"].map(b => (
-                <span key={b} className="px-3 py-1.5 rounded-full bg-accent-blue/10 text-accent-blue text-sm font-medium">{b}</span>
-              ))}
+            <div className="card-surface p-5">
+              <h4 className="font-heading text-sm font-bold text-foreground mb-3">Estimated Monthly Earnings</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-lg bg-secondary"><p className="text-xs text-muted-foreground mb-1">Ad Revenue</p><p className="text-sm font-bold text-primary">${monetResult.monthlyEarnings?.adRevenue?.min}-${monetResult.monthlyEarnings?.adRevenue?.max}</p></div>
+                <div className="p-3 rounded-lg bg-secondary"><p className="text-xs text-muted-foreground mb-1">Affiliate</p><p className="text-sm font-bold text-primary">${monetResult.monthlyEarnings?.affiliateRevenue?.min}-${monetResult.monthlyEarnings?.affiliateRevenue?.max}</p></div>
+                <div className="p-3 rounded-lg bg-secondary"><p className="text-xs text-muted-foreground mb-1">Brand Deals</p><p className="text-sm font-bold text-primary">${monetResult.monthlyEarnings?.brandDeals?.min}-${monetResult.monthlyEarnings?.brandDeals?.max}</p></div>
+                <div className="p-3 rounded-lg bg-primary/10 border border-primary"><p className="text-xs text-muted-foreground mb-1">Total</p><p className="text-sm font-bold text-primary">${monetResult.monthlyEarnings?.total?.min}-${monetResult.monthlyEarnings?.total?.max}</p></div>
+              </div>
             </div>
             <div className="card-surface p-5">
-              <h4 className="font-heading text-sm font-bold text-foreground mb-3">90-Day Action Steps</h4>
-              <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                <li>Build a media kit highlighting your audience demographics and engagement rates</li>
-                <li>Reach out to 10 brands in your top-matched categories with personalized pitches</li>
-                <li>Launch a digital product (e-book/course) on your best-performing topic</li>
-                <li>Optimize affiliate links in your top 5 performing posts</li>
-                <li>Create a dedicated "Sponsors" highlight/section on your profile</li>
-              </ol>
+              <h4 className="font-heading text-sm font-bold text-foreground mb-3">Brand Suggestions</h4>
+              <div className="space-y-2">
+                {monetResult.brandSuggestions?.map((brand: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                    <div><p className="text-sm font-medium text-foreground">{brand.name}</p><p className="text-xs text-muted-foreground">{brand.avgDeal}</p></div>
+                    <span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">{brand.fit}% fit</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -112,64 +188,69 @@ const MonetizationEngagement = () => {
 
       <div className="h-px bg-border" />
 
-      {/* Section 3 — Comment Sentiment */}
+      {/* Comment Sentiment */}
       <section className="space-y-4">
-        <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-primary" />
-          Comment Sentiment & Moderation
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            Comment Sentiment & Moderation
+          </h3>
+          <button onClick={() => loadExample('comment')} className="text-xs text-primary hover:text-primary/80">Load Example</button>
+        </div>
         <div className="card-surface p-5 space-y-4">
-          <textarea
-            placeholder="Paste comments (one per line)..."
-            rows={6}
-            className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all resize-none"
-          />
-          <button onClick={() => { setCommentLoading(true); setTimeout(() => { setCommentLoading(false); setCommentGenerated(true); }, 1000); }} disabled={commentLoading} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 flex items-center gap-2">
+          <textarea value={comments} onChange={(e) => setComments(e.target.value)} placeholder="Paste comments (one per line)..." rows={6} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all resize-none" />
+          <button onClick={handleCommentAnalysis} disabled={commentLoading} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 flex items-center gap-2">
             {commentLoading ? <span className="dot-bounce"><span /><span /><span /></span> : <><MessageSquare className="w-4 h-4" />Analyze Comments</>}
           </button>
         </div>
-        {commentGenerated && (
+        {commentResult && (
           <div className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Positive", pct: 68, color: "hsl(84 100% 65%)" },
-                { label: "Neutral", pct: 22, color: "hsl(215 100% 65%)" },
-                { label: "Negative", pct: 10, color: "hsl(0 100% 70%)" },
-              ].map((s) => (
-                <div key={s.label} className="card-surface p-4">
-                  <p className="text-xs text-muted-foreground mb-2">{s.label}</p>
-                  <div className="h-2 bg-secondary rounded-full overflow-hidden mb-1">
-                    <div className="h-full rounded-full" style={{ width: `${s.pct}%`, background: s.color }} />
+              <div className="card-surface p-4"><p className="text-xs text-muted-foreground mb-2">Positive</p><div className="h-2 bg-secondary rounded-full overflow-hidden mb-1"><div className="h-full rounded-full bg-green-500" style={{width: `${commentResult.sentimentBreakdown?.positive}%`}} /></div><p className="font-heading text-lg font-extrabold text-green-500">{commentResult.sentimentBreakdown?.positive}%</p></div>
+              <div className="card-surface p-4"><p className="text-xs text-muted-foreground mb-2">Neutral</p><div className="h-2 bg-secondary rounded-full overflow-hidden mb-1"><div className="h-full rounded-full bg-blue-500" style={{width: `${commentResult.sentimentBreakdown?.neutral}%`}} /></div><p className="font-heading text-lg font-extrabold text-blue-500">{commentResult.sentimentBreakdown?.neutral}%</p></div>
+              <div className="card-surface p-4"><p className="text-xs text-muted-foreground mb-2">Negative</p><div className="h-2 bg-secondary rounded-full overflow-hidden mb-1"><div className="h-full rounded-full bg-red-500" style={{width: `${commentResult.sentimentBreakdown?.negative}%`}} /></div><p className="font-heading text-lg font-extrabold text-red-500">{commentResult.sentimentBreakdown?.negative}%</p></div>
+            </div>
+            {commentResult.flaggedComments?.length > 0 && (
+              <div className="card-surface p-5 space-y-2">
+                <h4 className="font-heading text-sm font-bold text-foreground mb-2">Flagged Comments</h4>
+                {commentResult.flaggedComments.map((fc: any, i: number) => (
+                  <div key={i} className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-destructive/20 text-destructive text-[10px] font-bold uppercase flex-shrink-0">{fc.reason}</span>
+                    <p className="text-sm text-foreground">"{fc.comment}"</p>
                   </div>
-                  <p className="font-heading text-lg font-extrabold" style={{ color: s.color }}>{s.pct}%</p>
+                ))}
+              </div>
+            )}
+            {commentResult.suggestedReplies?.length > 0 && (
+              <div className="card-surface p-5 space-y-3">
+                <h4 className="font-heading text-sm font-bold text-foreground">AI Suggested Replies</h4>
+                {commentResult.suggestedReplies.map((sr: any, i: number) => (
+                  <div key={i} className="p-3 rounded-lg bg-secondary border border-border">
+                    <p className="text-xs text-muted-foreground mb-2">Comment: "{sr.comment}"</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm text-foreground flex-1">"{sr.reply}"</p>
+                      <button onClick={() => copyReply(sr.reply)} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                        {copiedReply === sr.reply ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {commentResult.engagementInsights && (
+              <div className="card-surface p-5">
+                <h4 className="font-heading text-sm font-bold text-foreground mb-3">Engagement Insights</h4>
+                <div className="space-y-2 text-sm">
+                  <p><span className="text-muted-foreground">Best performing type:</span> <span className="text-primary font-medium">{commentResult.engagementInsights.bestPerformingType}</span></p>
+                  <p><span className="text-muted-foreground">Best trigger:</span> <span className="text-primary font-medium">{commentResult.engagementInsights.bestTrigger}</span></p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {commentResult.engagementInsights.audienceInterest?.map((interest: string, i: number) => (
+                      <span key={i} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{interest}</span>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="card-surface p-5 space-y-2">
-              <h4 className="font-heading text-sm font-bold text-foreground mb-2">Flagged Comments</h4>
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-destructive/20 text-destructive text-[10px] font-bold uppercase flex-shrink-0">Toxic</span>
-                <p className="text-sm text-foreground">"This is just copied content, you have zero originality"</p>
               </div>
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-[10px] font-bold uppercase flex-shrink-0">Spam</span>
-                <p className="text-sm text-foreground">"Check out my channel for FREE money making tips!!!"</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {["AI Interest", "Tool Requests", "Pricing Questions", "Positive Feedback", "Skepticism"].map(t => (
-                <span key={t} className="px-3 py-1.5 rounded-full bg-accent-blue/10 text-accent-blue text-sm font-medium">{t}</span>
-              ))}
-            </div>
-
-            <div className="card-surface p-5">
-              <h4 className="font-heading text-sm font-bold text-foreground mb-2">Strategic Response Recommendation</h4>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Your audience is highly engaged with AI content but shows some skepticism. Consider addressing doubts transparently in your next post — share real numbers and behind-the-scenes proof. Pin the most constructive critical comment to show you value honest feedback. Ignore spam accounts but respond to genuine negative comments with empathy.
-              </p>
-            </div>
+            )}
           </div>
         )}
       </section>

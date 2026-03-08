@@ -128,3 +128,48 @@ export const analyzeSafety = async (data: {
   if (!response.ok) throw new Error('Safety analysis failed');
   return await response.json();
 };
+
+export const analyzePromotionTiming = async (data: {
+  contentDescription: string;
+  brand: string;
+  length: number;
+  contentType: string;
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_PROMOTION_TIMING, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Promotion timing analysis failed');
+  return await response.json();
+};
+
+export const predictMonetization = async (data: {
+  topic: string;
+  reach: string;
+  audience: string;
+  platform: string;
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_MONETIZATION_PREDICTOR, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Monetization prediction failed');
+  return await response.json();
+};
+
+export const analyzeComments = async (data: {
+  comments: string[];
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_COMMENT_ANALYZER, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Comment analysis failed');
+  return await response.json();
+};
