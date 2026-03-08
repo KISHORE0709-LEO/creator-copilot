@@ -4,10 +4,10 @@ import { useToast } from "@/hooks/use-toast";
 import PillTabs from "@/components/PillTabs";
 import { 
   TrendingUp, Calendar, Sparkles, Hash, Instagram, Linkedin, Youtube, Twitter, 
-  Clock, Target, Users, Eye, BarChart3, Zap, Globe, Filter, Search,
-  ChevronLeft, ChevronRight, Plus, Save, Copy, Check, Music, Facebook
+  Clock, Target, Users, Eye, BarChart3, ChevronLeft, ChevronRight, Plus, Copy, Check, Music, Facebook, Trash2, Edit
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const platformIcons: Record<string, React.ReactNode> = {
   Instagram: <Instagram className="w-4 h-4 text-pink-400" />,
@@ -58,6 +58,124 @@ const TrendsCalendar = () => {
   const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const [scheduleForm, setScheduleForm] = useState({
+    title: "",
+    platform: "Instagram",
+    date: "",
+    time: "",
+    contentType: "Post",
+    notes: ""
+  });
+  const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      loadScheduledPosts();
+    }
+  }, [user]);
+
+  const loadScheduledPosts = async () => {
+    if (!user) return;
+    try {
+      const q = query(
+        collection(db, "scheduledPosts"),
+        where("userId", "==", user.uid),
+        orderBy("date", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      const posts = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setScheduledPosts(posts);
+    } catch (error) {
+      console.error("Error loading posts:", error);
+    }
+  };
+
+  const handleSchedulePost = async () => {
+    if (!scheduleForm.title || !scheduleForm.date || !scheduleForm.time) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in title, date, and time",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const newPost = {
+        ...scheduleForm,
+        userId: user?.uid,
+        status: "Scheduled",
+        createdAt: new Date().toISOString()
+      };
+
+      const docRef = await addDoc(collection(db, "scheduledPosts"), newPost);
+      
+      setScheduledPosts([...scheduledPosts, { id: docRef.id, ...newPost }]);
+      setScheduleForm({
+        title: "",
+        platform: "Instagram",
+        date: "",
+        time: "",
+        contentType: "Post",
+        notes: ""
+      });
+
+      toast({
+        title: "Post Scheduled!",
+        description: "Your post has been scheduled successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to schedule post",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      await deleteDoc(doc(db, "scheduledPosts", postId));
+      setScheduledPosts(scheduledPosts.filter(p => p.id !== postId));
+      toast({
+        title: "Post Deleted",
+        description: "Scheduled post has been removed",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getWeekDays = () => {
+    const today = new Date();
+    const days = [];
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      const dateStr = day.toISOString().split('T')[0];
+      const postsForDay = scheduledPosts.filter(p => p.date === dateStr);
+      
+      days.push({
+        name: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day.getDay()],
+        date: day.getDate(),
+        fullDate: dateStr,
+        isToday: dateStr === today.toISOString().split('T')[0],
+        posts: postsForDay
+      });
+    }
+    return days;
+  };
 
   // Mock trending data
   const mockTrendData: TrendData[] = [
@@ -603,184 +721,96 @@ const TrendsCalendar = () => {
 
       {subTab === "Scheduling" && (
         <div className="space-y-6 animate-fade-in">
-          {/* Scheduling Interface */}
           <div className="card-surface p-6 space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-5 h-5 text-primary" />
-              <h3 className="font-heading text-lg font-bold text-foreground">Smart Scheduling</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
+            <h3 className="font-heading text-lg font-bold text-foreground">Schedule a Post</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-muted-foreground mb-2 block">What's your post about?</label>
+                <input type="text" value={scheduleForm.title} onChange={(e) => setScheduleForm({...scheduleForm, title: e.target.value})} placeholder="Enter content title" className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Content to Schedule</label>
-                  <textarea 
-                    placeholder="Paste your content here..." 
-                    rows={4} 
-                    value={formData.content}
-                    onChange={(e) => setFormData({...formData, content: e.target.value})}
-                    className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all resize-none" 
-                  />
+                  <label className="text-sm text-muted-foreground mb-2 block">Platform</label>
+                  <select value={scheduleForm.platform} onChange={(e) => setScheduleForm({...scheduleForm, platform: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all appearance-none">
+                    <option>Instagram</option><option>LinkedIn</option><option>YouTube</option><option>X (Twitter)</option><option>TikTok</option><option>Facebook</option>
+                  </select>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Platform</label>
-                    <select 
-                      value={formData.platform}
-                      onChange={(e) => setFormData({...formData, platform: e.target.value})}
-                      className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all appearance-none"
-                    >
-                      {platforms.map(p => <option key={p}>{p}</option>)}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Content Type</label>
-                    <select 
-                      value={formData.contentType}
-                      onChange={(e) => setFormData({...formData, contentType: e.target.value})}
-                      className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all appearance-none"
-                    >
-                      {contentTypes.map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Date</label>
+                  <input type="date" value={scheduleForm.date} onChange={(e) => setScheduleForm({...scheduleForm, date: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all" />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Time</label>
+                  <input type="time" value={scheduleForm.time} onChange={(e) => setScheduleForm({...scheduleForm, time: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all" />
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Schedule Date & Time</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input 
-                      type="date" 
-                      className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all" 
-                    />
-                    <input 
-                      type="time" 
-                      className="px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all" 
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Optimal Time Suggestions</label>
-                  <div className="space-y-2">
-                    {[
-                      { time: "9:00 AM", reason: "Peak morning engagement", score: "95%" },
-                      { time: "1:00 PM", reason: "Lunch break activity", score: "87%" },
-                      { time: "6:00 PM", reason: "Evening commute", score: "92%" }
-                    ].map((suggestion, i) => (
-                      <button
-                        key={i}
-                        className="w-full p-3 rounded-lg bg-secondary border border-border hover:border-primary/50 transition-colors text-left"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{suggestion.time}</p>
-                            <p className="text-xs text-muted-foreground">{suggestion.reason}</p>
-                          </div>
-                          <span className="text-xs font-bold text-green-500">{suggestion.score}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-2 block">Content Type</label>
+                <select value={scheduleForm.contentType} onChange={(e) => setScheduleForm({...scheduleForm, contentType: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all appearance-none">
+                  {contentTypes.map(t => <option key={t}>{t}</option>)}
+                </select>
               </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button 
-                onClick={() => toast({ title: "Content Scheduled!", description: "Your post has been scheduled successfully" })}
-                className="flex-1 py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <Clock className="w-4 h-4" />
-                Schedule Post
-              </button>
-              <button className="px-6 py-3 rounded-lg bg-secondary text-foreground font-bold text-sm hover:bg-secondary/80 transition-colors">
-                Save Draft
+              <div>
+                <label className="text-sm text-muted-foreground mb-2 block">Notes/Caption (optional)</label>
+                <textarea value={scheduleForm.notes} onChange={(e) => setScheduleForm({...scheduleForm, notes: e.target.value})} placeholder="Add any notes or caption" rows={3} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all resize-none" />
+              </div>
+              <button onClick={handleSchedulePost} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2">
+                <Clock className="w-4 h-4" />Schedule Post
               </button>
             </div>
           </div>
-
-          {/* Scheduled Posts Queue */}
           <div className="card-surface p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="font-heading text-sm font-bold text-foreground flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-primary" />
-                Scheduled Posts Queue
-              </h4>
-              <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground">All</button>
-                <button className="text-xs text-primary font-medium">This Week</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground">Next Week</button>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              {[
-                { content: "5 AI tools that just changed everything...", platform: "LinkedIn", time: "Today, 2:00 PM", status: "scheduled" },
-                { content: "Behind the scenes: Building my AI workflow", platform: "Instagram", time: "Tomorrow, 9:00 AM", status: "scheduled" },
-                { content: "Hot take: No-code is the future of development", platform: "X (Twitter)", time: "Jan 8, 12:00 PM", status: "draft" },
-                { content: "Weekly AI news roundup and analysis", platform: "YouTube", time: "Jan 10, 5:00 PM", status: "scheduled" }
-              ].map((post, i) => (
-                <div key={i} className="p-4 rounded-lg bg-secondary border border-border group hover:border-primary/50 transition-colors">
-                  <div className="flex items-start justify-between">
+            <h4 className="font-heading text-sm font-bold text-foreground mb-4">Upcoming Posts</h4>
+            {scheduledPosts.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground text-sm">No posts scheduled yet. Start scheduling your content above!</div>
+            ) : (
+              <div className="space-y-3">
+                {scheduledPosts.map((post) => (
+                  <div key={post.id} className="p-4 rounded-lg bg-secondary border border-border flex items-start justify-between group hover:border-primary/50 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         {platformIcons[post.platform]}
-                        <span className="text-xs font-medium text-muted-foreground">{post.platform}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(post.status)}`}>
-                          {post.status}
-                        </span>
+                        <span className="text-sm font-medium text-foreground">{post.title}</span>
                       </div>
-                      <p className="text-sm font-medium text-foreground mb-1 line-clamp-1">{post.content}</p>
-                      <p className="text-xs text-muted-foreground">{post.time}</p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-1">
+                        <span>{post.platform}</span><span>•</span><span>{new Date(post.date).toLocaleDateString()}</span><span>•</span><span>{post.time}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">{post.contentType}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${post.status === 'Posted' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>{post.status}</span>
+                      </div>
+                      {post.notes && <p className="text-xs text-muted-foreground mt-2">{post.notes}</p>}
                     </div>
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-1 text-muted-foreground hover:text-foreground transition-colors">
-                        <Clock className="w-4 h-4" />
-                      </button>
-                      <button className="p-1 text-muted-foreground hover:text-foreground transition-colors">
-                        <Copy className="w-4 h-4" />
-                      </button>
+                      <button className="p-2 text-muted-foreground hover:text-foreground transition-colors"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => handleDeletePost(post.id)} className="p-2 text-muted-foreground hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="card-surface p-5">
+            <h4 className="font-heading text-sm font-bold text-foreground mb-4">This Week at a Glance</h4>
+            <div className="grid grid-cols-7 gap-2">
+              {getWeekDays().map((day, i) => (
+                <div key={i} className={`p-3 rounded-lg border transition-all ${day.isToday ? 'bg-primary/10 border-primary' : 'bg-secondary border-border'}`}>
+                  <div className="text-center mb-2">
+                    <p className="text-xs font-medium text-muted-foreground">{day.name}</p>
+                    <p className="text-sm font-bold text-foreground">{day.date}</p>
+                  </div>
+                  {day.posts.length > 0 ? (
+                    <>
+                      <p className="text-xs text-center text-primary font-medium mb-1">{day.posts.length} post{day.posts.length > 1 ? 's' : ''}</p>
+                      <div className="flex justify-center gap-1">
+                        {day.posts.slice(0, 3).map((post, idx) => <span key={idx}>{platformIcons[post.platform]}</span>)}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-center text-muted-foreground">Free day</p>
+                  )}
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Bulk Scheduling */}
-          <div className="card-surface p-5">
-            <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary" />
-              Bulk Scheduling Tools
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button className="p-4 rounded-lg bg-secondary border border-border hover:border-primary/50 transition-colors text-left">
-                <div className="flex items-center gap-3 mb-2">
-                  <Calendar className="w-5 h-5 text-blue-500" />
-                  <span className="font-medium text-foreground">Weekly Batch</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Schedule 7 posts across all platforms with optimal timing</p>
-              </button>
-              
-              <button className="p-4 rounded-lg bg-secondary border border-border hover:border-primary/50 transition-colors text-left">
-                <div className="flex items-center gap-3 mb-2">
-                  <Target className="w-5 h-5 text-green-500" />
-                  <span className="font-medium text-foreground">Campaign Mode</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Schedule coordinated content across platforms for maximum impact</p>
-              </button>
-              
-              <button className="p-4 rounded-lg bg-secondary border border-border hover:border-primary/50 transition-colors text-left">
-                <div className="flex items-center gap-3 mb-2">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
-                  <span className="font-medium text-foreground">Auto-Pilot</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Let AI schedule your content based on audience behavior patterns</p>
-              </button>
             </div>
           </div>
         </div>
