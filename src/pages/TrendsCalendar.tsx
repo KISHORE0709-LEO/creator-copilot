@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import PillTabs from "@/components/PillTabs";
-import { analyzeTrends, generateContentIdeas } from "@/lib/lambda";
+import { analyzeTrends, generateContentIdeas, generateCalendar } from "@/lib/lambda";
 import { 
   TrendingUp, Calendar, Sparkles, Hash, Instagram, Linkedin, Youtube, Twitter, 
   Clock, Target, Users, Eye, BarChart3, ChevronLeft, ChevronRight, Plus, Copy, Check, Music, Facebook, Trash2, Edit
@@ -69,6 +69,8 @@ const TrendsCalendar = () => {
     notes: ""
   });
   const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
+  const [schedulingIntelligence, setSchedulingIntelligence] = useState<any>(null);
+  const [loadingIntelligence, setLoadingIntelligence] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -96,6 +98,36 @@ const TrendsCalendar = () => {
         description: "Could not load scheduled posts",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleGetSchedulingIntelligence = async () => {
+    setLoadingIntelligence(true);
+    try {
+      const response = await getSchedulingIntelligence({
+        platform: scheduleForm.platform,
+        contentType: scheduleForm.contentType,
+        niche: formData.niche,
+        region: formData.region,
+        targetAudience: formData.targetAudience
+      });
+      
+      if (response?.recommendation) {
+        setSchedulingIntelligence(response.recommendation);
+        toast({
+          title: "✨ AI Recommendations Ready",
+          description: "Optimal posting times suggested below"
+        });
+      }
+    } catch (error) {
+      console.error('Intelligence error:', error);
+      toast({
+        title: "Could not get recommendations",
+        description: "Using default scheduling",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingIntelligence(false);
     }
   };
 
@@ -203,8 +235,8 @@ const TrendsCalendar = () => {
     { title: "Creator Economy Trends 2025", format: "YouTube Short", platform: "YouTube", estimatedReach: "40K–100K", difficulty: "Medium", trending: true }
   ];
 
-  // Calendar data with more comprehensive scheduling
-  const calendarData = [
+  const [calendarData, setCalendarData] = useState<any[]>([]);
+  const mockCalendarData = [
     { day: "Mon", date: "Jan 6", platform: "Instagram", type: "Reel", topic: "Quick AI tip", time: "9:00 AM", status: "scheduled", engagement: "High" },
     { day: "Tue", date: "Jan 7", platform: "LinkedIn", type: "Article", topic: "Industry analysis", time: "8:00 AM", status: "draft", engagement: "Medium" },
     { day: "Wed", date: "Jan 8", platform: "YouTube", type: "Video", topic: "Tool review", time: "5:00 PM", status: "idea", engagement: "High" },
@@ -228,34 +260,47 @@ const TrendsCalendar = () => {
   const handleGenerateTrends = async () => {
     setLoading(true);
     try {
-      const trendsResponse = await analyzeTrends({
-        platform: formData.platforms[0] || 'Instagram',
-        niche: formData.niche,
-        region: formData.region
-      });
+      console.log('🔍 Generating trends for:', formData);
+      
+      const [trendsResponse, ideasResponse] = await Promise.all([
+        analyzeTrends({
+          platform: formData.platforms[0] || 'Instagram',
+          niche: formData.niche,
+          region: formData.region
+        }),
+        generateContentIdeas({
+          niche: formData.niche,
+          platform: formData.platforms[0] || 'Instagram',
+          targetAudience: formData.targetAudience
+        })
+      ]);
 
-      const ideasResponse = await generateContentIdeas({
-        niche: formData.niche,
-        platform: formData.platforms[0] || 'Instagram',
-        targetAudience: formData.targetAudience
-      });
+      console.log('✅ Trends Response:', trendsResponse);
+      console.log('✅ Ideas Response:', ideasResponse);
 
-      setTrendData(trendsResponse.trends || mockTrendData);
-      setContentIdeas(ideasResponse.ideas || mockContentIdeas);
+      if (!trendsResponse?.trends || trendsResponse.trends.length === 0) {
+        throw new Error('No trends returned from API');
+      }
+      if (!ideasResponse?.ideas || ideasResponse.ideas.length === 0) {
+        throw new Error('No ideas returned from API');
+      }
+
+      setTrendData(trendsResponse.trends);
+      setContentIdeas(ideasResponse.ideas);
       setGenerated(true);
+      
       toast({
-        title: "Trends Discovered!",
-        description: `Found trending hashtags and content ideas for ${formData.niche}`
+        title: "✨ Trends Discovered!",
+        description: `Found ${trendsResponse.trends.length} trending hashtags and ${ideasResponse.ideas.length} content ideas`
       });
     } catch (error) {
-      console.error('Error:', error);
-      setTrendData(mockTrendData);
-      setContentIdeas(mockContentIdeas);
-      setGenerated(true);
+      console.error('❌ Error generating trends:', error);
       toast({
-        title: "Using Sample Data",
-        description: "Showing example trends. Connect Lambda for live data."
+        title: "Generation Failed",
+        description: error instanceof Error ? error.message : "Could not generate trends. Check console.",
+        variant: "destructive"
       });
+      setGenerated(false);
     } finally {
       setLoading(false);
     }
@@ -264,18 +309,36 @@ const TrendsCalendar = () => {
   const handleGenerateCalendar = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      console.log('📅 Generating calendar for:', formData);
+      
+      const response = await generateCalendar({
+        niche: formData.niche,
+        platforms: formData.platforms,
+        contentGoal: formData.contentGoal,
+        postingFrequency: 'Daily',
+        contentMix: 'Balanced'
+      });
+
+      console.log('✅ Calendar Response:', response);
+
+      if (!response || !response.calendar || response.calendar.length !== 7) {
+        throw new Error('Invalid calendar data received');
+      }
+
+      setCalendarData(response.calendar);
       setGenerated(true);
       toast({
-        title: "Calendar Generated!",
-        description: "Your weekly content calendar is ready",
+        title: "✨ Calendar Generated!",
+        description: `Your weekly content calendar for ${formData.niche} is ready`
       });
     } catch (error) {
+      console.error('❌ Calendar Error:', error);
       toast({
-        title: "Error",
-        description: "Failed to generate calendar. Please try again.",
-        variant: "destructive",
+        title: "Generation Failed",
+        description: error instanceof Error ? error.message : "Could not generate calendar. Check console.",
+        variant: "destructive"
       });
+      setGenerated(false);
     } finally {
       setLoading(false);
     }
@@ -574,7 +637,14 @@ const TrendsCalendar = () => {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="text-sm font-medium text-foreground px-4">
-                  Week of Jan {6 + currentWeek * 7} - {12 + currentWeek * 7}
+                  {(() => {
+                    const today = new Date();
+                    const startDate = new Date(today);
+                    startDate.setDate(today.getDate() + (currentWeek * 7));
+                    const endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 6);
+                    return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                  })()}
                 </span>
                 <button
                   onClick={() => setCurrentWeek(currentWeek + 1)}
@@ -749,10 +819,46 @@ const TrendsCalendar = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm text-muted-foreground mb-2 block">Platform</label>
-                  <select value={scheduleForm.platform} onChange={(e) => setScheduleForm({...scheduleForm, platform: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all appearance-none">
+                  <select value={scheduleForm.platform} onChange={(e) => { setScheduleForm({...scheduleForm, platform: e.target.value}); setSchedulingIntelligence(null); }} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all appearance-none">
                     <option>Instagram</option><option>LinkedIn</option><option>YouTube</option><option>X (Twitter)</option><option>TikTok</option><option>Facebook</option>
                   </select>
                 </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Content Type</label>
+                  <select value={scheduleForm.contentType} onChange={(e) => { setScheduleForm({...scheduleForm, contentType: e.target.value}); setSchedulingIntelligence(null); }} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all appearance-none">
+                    {contentTypes.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <button onClick={handleGetSchedulingIntelligence} disabled={loadingIntelligence} className="w-full mt-6 py-3 rounded-lg bg-secondary border border-primary text-primary font-medium text-sm hover:bg-primary/10 transition-all disabled:opacity-50">
+                    {loadingIntelligence ? 'Getting AI Tips...' : '✨ Get AI Timing Tips'}
+                  </button>
+                </div>
+              </div>
+              
+              {schedulingIntelligence && (
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <h4 className="text-sm font-bold text-foreground mb-2">✨ AI Recommendations</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground mb-1">Best Times:</p>
+                      <div className="flex gap-2">
+                        {schedulingIntelligence.bestTimes?.map((time: string, i: number) => (
+                          <button key={i} onClick={() => setScheduleForm({...scheduleForm, time: time})} className="px-2 py-1 rounded bg-primary/10 text-primary text-xs hover:bg-primary/20">{time}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground mb-1">Best Days:</p>
+                      <p className="text-foreground text-xs">{schedulingIntelligence.bestDays?.join(', ')}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">{schedulingIntelligence.reasoning}</p>
+                  <p className="text-xs text-primary mt-1">Predicted Engagement: {schedulingIntelligence.engagementPrediction}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-muted-foreground mb-2 block">Date</label>
                   <input type="date" value={scheduleForm.date} onChange={(e) => setScheduleForm({...scheduleForm, date: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all" />
@@ -761,12 +867,6 @@ const TrendsCalendar = () => {
                   <label className="text-sm text-muted-foreground mb-2 block">Time</label>
                   <input type="time" value={scheduleForm.time} onChange={(e) => setScheduleForm({...scheduleForm, time: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all" />
                 </div>
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground mb-2 block">Content Type</label>
-                <select value={scheduleForm.contentType} onChange={(e) => setScheduleForm({...scheduleForm, contentType: e.target.value})} className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none input-glow transition-all appearance-none">
-                  {contentTypes.map(t => <option key={t}>{t}</option>)}
-                </select>
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">Notes/Caption (optional)</label>

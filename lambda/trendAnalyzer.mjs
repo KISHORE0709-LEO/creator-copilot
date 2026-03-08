@@ -17,32 +17,34 @@ export const handler = async (event) => {
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
     const { platform, niche, region, timeframe } = body;
 
-    const prompt = `You are a social media trend analyst. Generate 8 trending hashtags for:
+    console.log('📈 Trends Request:', { platform, niche, region });
+
+    const prompt = `Generate 8 trending hashtags for:
 Niche: ${niche}
 Region: ${region || 'Global'}
 Platform: ${platform}
 
-Return ONLY valid JSON array with this exact structure:
+Return ONLY valid JSON array:
 [
   {
-    "hashtag": "#ExampleTag",
+    "hashtag": "#${niche}Tag",
     "volume": 125000,
     "growth": 45,
-    "platforms": ["Instagram", "LinkedIn"],
+    "platforms": ["${platform}"],
     "difficulty": "Medium"
   }
 ]
 
 Rules:
-- 8 hashtags total
+- 8 UNIQUE hashtags for ${niche}
 - volume: 10000-500000
 - growth: 15-95 (percentage)
 - difficulty: "Easy", "Medium", or "Hard"
-- platforms: array with 1-3 platforms from ["Instagram", "LinkedIn", "YouTube", "X (Twitter)", "TikTok", "Facebook"]`;
+- platforms: array with 1-3 from ["Instagram", "LinkedIn", "YouTube", "X (Twitter)", "TikTok", "Facebook"]`;
 
     const payload = {
       messages: [{ role: "user", content: [{ text: prompt }] }],
-      inferenceConfig: { maxTokens: 2000, temperature: 0.7, topP: 0.9 }
+      inferenceConfig: { maxTokens: 2000, temperature: 0.8, topP: 0.9 }
     };
 
     const command = new InvokeModelCommand({
@@ -56,8 +58,20 @@ Rules:
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
     const generatedText = responseBody.output.message.content[0].text;
 
+    console.log('🤖 AI Response:', generatedText);
+
     const jsonMatch = generatedText.match(/\[[\s\S]*\]/);
-    const trends = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    if (!jsonMatch) {
+      throw new Error('No JSON array in response');
+    }
+
+    const trends = JSON.parse(jsonMatch[0]);
+    
+    if (!Array.isArray(trends) || trends.length === 0) {
+      throw new Error('Invalid trends format');
+    }
+
+    console.log('✅ Generated', trends.length, 'trends');
 
     return {
       statusCode: 200,
@@ -65,11 +79,11 @@ Rules:
       body: JSON.stringify({ trends })
     };
   } catch (error) {
-    console.error('Error:', error);
+    console.error('❌ Error:', error);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ error: error.message, details: 'Trend analysis failed' })
     };
   }
 };

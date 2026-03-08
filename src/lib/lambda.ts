@@ -96,3 +96,20 @@ export const getSchedulingIntelligence = async (data: {
   if (!response.ok) throw new Error('Scheduling intelligence failed');
   return await response.json();
 };
+
+export const generateCalendar = async (data: {
+  niche: string;
+  platforms: string[];
+  contentGoal?: string;
+  postingFrequency?: string;
+  contentMix?: string;
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_CALENDAR_GENERATOR, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Calendar generation failed');
+  return await response.json();
+};
