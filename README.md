@@ -300,7 +300,7 @@ Lambda Updates → AWS Console/CLI → Deploy
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-repo/creator-copilot.git
+   git clone https://github.com/KISHORE0709-LEO/creator-copilot.git
    cd creator-copilot
    ```
 
@@ -311,19 +311,38 @@ Lambda Updates → AWS Console/CLI → Deploy
 
 3. **Configure environment variables**
    
-   Create `.env.local`:
+   Create `.env` file in project root:
    ```bash
-   # AWS
-   VITE_AWS_API_URL=https://your-api-id.execute-api.us-east-1.amazonaws.com/prod
+   # AWS API Gateway
+   VITE_AWS_API_URL=https://bzcl8fgpt7.execute-api.us-east-1.amazonaws.com/prod/analyze
    
-   # Firebase
+   # Firebase Configuration
    VITE_FIREBASE_API_KEY=your_firebase_api_key
    VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
    VITE_FIREBASE_PROJECT_ID=your_project_id
    VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
    VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
    VITE_FIREBASE_APP_ID=your_app_id
+   
+   # Google Gemini (Optional - for Content Analyzer)
+   VITE_GEMINI_API_KEY=your_gemini_api_key
+   
+   # AWS Lambda Function URLs
+   VITE_LAMBDA_TREND_ANALYZER=https://bzcl8fgpt7.execute-api.us-east-1.amazonaws.com/prod/trendAnalyzer
+   VITE_LAMBDA_CONTENT_IDEA_GENERATOR=https://bzcl8fgpt7.execute-api.us-east-1.amazonaws.com/prod/contentIdeaGenerator
+   VITE_LAMBDA_SCHEDULING_INTELLIGENCE=https://bzcl8fgpt7.execute-api.us-east-1.amazonaws.com/prod/schedulingIntelligence
+   VITE_LAMBDA_CALENDAR_GENERATOR=https://bzcl8fgpt7.execute-api.us-east-1.amazonaws.com/prod/calendarGenerator
+   VITE_LAMBDA_GENERATE_HOOK=https://lcan4guinwhy6uxl6k3ex3lepy0vkxjj.lambda-url.us-east-1.on.aws/
+   VITE_LAMBDA_GENERATE_ASSEMBLY=https://ch3peefu6b5axu7xuqwdo7fspe0vkwmb.lambda-url.us-east-1.on.aws/
+   VITE_LAMBDA_TRANSLATE_CONTENT=https://olqatofrzectvzzkwhlgn3heie0mhwyx.lambda-url.us-east-1.on.aws/
+   VITE_LAMBDA_SAFETY_ANALYZER=https://a2xzhmq5wrxgweh2ic72pjf3tm0vjtqe.lambda-url.us-east-1.on.aws/
+   VITE_LAMBDA_PROMOTION_TIMING=https://vnbwqwarr3zcwsr3hlestz4o7e0ppdyj.lambda-url.us-east-1.on.aws/
+   VITE_LAMBDA_MONETIZATION_PREDICTOR=https://bsoe6ex7sf3ynfsgztpjeq6zau0qzkzg.lambda-url.us-east-1.on.aws/
+   VITE_LAMBDA_COMMENT_ANALYZER=https://ytbe2zpztw35c2rki24daxib340ecqbv.lambda-url.us-east-1.on.aws/
+   VITE_LAMBDA_THUMBNAIL_GENERATOR=https://dz4esyf5tgmkwwkrsrc2g2zioi0nllhb.lambda-url.us-east-1.on.aws/
    ```
+   
+   **Note**: Replace Firebase values with your actual credentials from Firebase Console
 
 4. **Start development server**
    ```bash
@@ -339,26 +358,42 @@ Lambda Updates → AWS Console/CLI → Deploy
 
 ### Lambda Functions
 
-We have deployed **5 Lambda functions** on AWS:
+We have deployed **12 Lambda functions** on AWS:
 
 | Function Name | Runtime | Memory | Timeout | Purpose |
 |--------------|---------|--------|---------|---------|
+| `contentAnalyzer` | Node.js 20.x | 512 MB | 30s | Analyze content quality & metrics |
 | `trendAnalyzer` | Node.js 20.x | 512 MB | 30s | Discover trending hashtags |
 | `contentIdeaGenerator` | Node.js 20.x | 512 MB | 30s | Generate content ideas |
 | `schedulingIntelligence` | Node.js 20.x | 512 MB | 30s | Recommend posting times |
-| `generateThumbnail` | Node.js 20.x | 512 MB | 60s | Create AI thumbnails |
-| `saveThumbnailToS3` | Node.js 20.x | 512 MB | 30s | Save thumbnails to S3 |
+| `calendarGenerator` | Node.js 20.x | 512 MB | 30s | Generate content calendar |
+| `generateHook` | Node.js 20.x | 512 MB | 30s | Create engaging video hooks |
+| `generateAssembly` | Node.js 20.x | 512 MB | 30s | Assemble content components |
+| `translateContent` | Node.js 20.x | 512 MB | 30s | Multi-language translation |
+| `safetyAnalyzer` | Node.js 20.x | 512 MB | 30s | Content safety & copyright check |
+| `monetizationPredictor` | Node.js 20.x | 512 MB | 30s | Predict revenue potential |
+| `commentAnalyzer` | Node.js 20.x | 512 MB | 30s | Analyze audience comments |
+| `thumbnailGenerator` | Node.js 20.x | 512 MB | 60s | Generate AI thumbnails |
 
 ### API Endpoints
 
 ```
-Base URL: https://your-api-id.execute-api.us-east-1.amazonaws.com/prod
+Base URL: https://bzcl8fgpt7.execute-api.us-east-1.amazonaws.com/prod
 
-POST /trendAnalyzer           - Analyze trends
+POST /analyze                 - Analyze content quality
+POST /trendAnalyzer           - Discover trending hashtags
 POST /contentIdeaGenerator    - Generate content ideas
 POST /schedulingIntelligence  - Get posting recommendations
-POST /generateThumbnail       - Create AI thumbnail
-POST /save-thumbnail          - Save thumbnail to S3
+POST /calendarGenerator       - Generate content calendar
+
+Lambda Function URLs (Direct Invocation):
+POST /generate-hook           - Create video hooks
+POST /generate-assembly       - Assemble content
+POST /translate-content       - Translate content
+POST /safety-analyzer         - Check content safety
+POST /monetization-predictor  - Predict revenue
+POST /comment-analyzer        - Analyze comments
+POST /thumbnail-generator     - Generate thumbnails
 ```
 
 ### S3 Bucket Configuration
@@ -484,13 +519,13 @@ This project demonstrates:
 <table>
   <tr>
     <td align="center">
-      <img src="https://github.com/identicons/mkishore.png" width="100px;" alt="M Kishore"/><br />
+      <img src="https://github.com/identicons/KISHORE0709-LEO.png" width="100px;" alt="M Kishore"/><br />
       <sub><b>M Kishore</b></sub><br />
       <sub>Full Stack Developer</sub><br />
       <sub>AWS Integration & Backend</sub>
     </td>
     <td align="center">
-      <img src="https://github.com/identicons/chvsneha.png" width="100px;" alt="CH V Sneha"/><br />
+      <img src="https://github.com/identicons/chv-sneha.png" width="100px;" alt="CH V Sneha"/><br />
       <sub><b>CH V Sneha</b></sub><br />
       <sub>Full Stack Developer</sub><br />
       <sub>Frontend & UI/UX</sub>
@@ -561,8 +596,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📧 Contact
 
 For questions, feedback, or support:
-- 📧 Email: support@creatorcopilot.com
-- 🐛 Issues: [GitHub Issues](https://github.com/your-repo/creator-copilot/issues)
+- 📧 Email: kishoremurali0726@gmail.com (or) chvsneha2310@gmail.com 
+- 🐛 Issues: [GitHub Issues](https://github.com/KISHORE0709-LEO/creator-copilot/issues)
 - 📖 Documentation: See `/docs` folder
 
 ---
