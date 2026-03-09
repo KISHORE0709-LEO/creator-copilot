@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { logOut } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { generateInitialsAvatar } from "@/lib/avatars";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import {
   LayoutDashboard,
   Search,
@@ -45,6 +47,7 @@ const pageTitles: Record<string, string> = {
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
   const { user, userProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -52,6 +55,33 @@ const DashboardLayout = () => {
 
   const currentPath = location.pathname;
   const pageTitle = pageTitles[currentPath] || "Dashboard";
+
+  useEffect(() => {
+    loadNotificationCount();
+    // Refresh count every minute
+    const interval = setInterval(loadNotificationCount, 60000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const loadNotificationCount = async () => {
+    if (!user) return;
+    try {
+      const schedulesRef = collection(db, "schedules");
+      const q = query(
+        schedulesRef,
+        where("userId", "==", user.uid),
+        orderBy("scheduledDate", "desc")
+      );
+      const snapshot = await getDocs(q);
+      const upcomingCount = snapshot.docs.filter(doc => {
+        const scheduledDate = new Date(doc.data().scheduledDate);
+        return scheduledDate > new Date();
+      }).length;
+      setNotificationCount(upcomingCount);
+    } catch (error) {
+      console.error("Error loading notification count:", error);
+    }
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -162,7 +192,13 @@ const DashboardLayout = () => {
           <User className="w-5 h-5 flex-shrink-0" />
           {sidebarOpen && <span>Profile</span>}
         </button>
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+        <button 
+          onClick={() => {
+            navigate("/dashboard/settings");
+            setMobileOpen(false);
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+        >
           <Settings className="w-5 h-5 flex-shrink-0" />
           {sidebarOpen && <span>Settings</span>}
         </button>
@@ -220,9 +256,19 @@ const DashboardLayout = () => {
             <span className="hidden sm:block text-sm text-muted-foreground">
               {getGreeting()}, <span className="text-foreground font-medium">{getUserDisplayName()}</span> 👋
             </span>
-            <button className="relative text-muted-foreground hover:text-foreground transition-colors">
+            <button 
+              onClick={() => navigate("/dashboard/notifications")}
+              className="relative text-muted-foreground hover:text-foreground transition-colors"
+            >
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+              {notificationCount > 0 && (
+                <>
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                </>
+              )}
             </button>
             <button 
               onClick={() => navigate("/dashboard/profile")}

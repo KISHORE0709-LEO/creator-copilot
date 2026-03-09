@@ -19,6 +19,8 @@ import TrendsCalendar from "./pages/TrendsCalendar";
 import SafetyCopyright from "./pages/SafetyCopyright";
 import MonetizationEngagement from "./pages/MonetizationEngagement";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import ChatbotRobot from "./components/ChatbotRobot";
 
@@ -54,6 +56,8 @@ const App = () => (
               <Route path="safety" element={<SafetyCopyright />} />
               <Route path="monetization" element={<MonetizationEngagement />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="notifications" element={<Notifications />} />
             </Route>
             <Route path="/dashboard/thumbcraft/editor" element={<ThumbnailEditor />} />
             <Route path="*" element={<NotFound />} />
