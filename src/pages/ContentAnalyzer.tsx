@@ -307,64 +307,97 @@ const ContentAnalyzer = () => {
 
                 {/* Issues */}
                 {result.issues && result.issues.length > 0 && (
-                  <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                    <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                      <span className="text-red-500">⚠</span>
-                      Issues Found
-                    </h4>
-                    <ul className="space-y-3">
+                  <div className="card-surface p-6 animate-fade-in border-l-4 border-red-500" style={{ animationDelay: "0.1s" }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
+                        <span className="text-2xl">⚠️</span>
+                        Critical Issues Found
+                      </h4>
+                      <span className="px-3 py-1 bg-red-500/10 text-red-500 rounded-full text-xs font-bold">
+                        {result.issues.length} Issues
+                      </span>
+                    </div>
+                    <div className="space-y-4">
                       {result.issues.map((issue, index) => (
-                        <li key={index} className="flex gap-3 text-sm text-muted-foreground">
-                          <span className="text-red-500 font-bold mt-0.5">•</span>
-                          <span className="flex-1">{issue}</span>
-                        </li>
+                        <div key={index} className="flex gap-3 p-3 bg-red-500/5 rounded-lg border border-red-500/20">
+                          <span className="text-red-500 font-bold text-lg mt-0.5">❌</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">{issue}</p>
+                          </div>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
                 {/* Suggestions for Improvement */}
-                <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.15s" }}>
-                  <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    Suggestions for Improvement
-                  </h4>
-                  <ul className="space-y-3">
+                <div className="card-surface p-6 animate-fade-in border-l-4 border-primary" style={{ animationDelay: "0.15s" }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      AI-Powered Suggestions
+                    </h4>
+                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">
+                      {result.suggestions.length} Tips
+                    </span>
+                  </div>
+                  <div className="space-y-3">
                     {result.suggestions.map((suggestion, index) => (
-                      <li key={index} className="flex gap-3 text-sm text-muted-foreground">
-                        <span className="text-primary font-bold mt-0.5">•</span>
-                        <span className="flex-1">{suggestion}</span>
-                      </li>
+                      <div key={index} className="flex gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20 hover:bg-primary/10 transition-all">
+                        <span className="text-primary font-bold text-lg mt-0.5">💡</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground leading-relaxed">{suggestion}</p>
+                        </div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
 
                 {/* Platform Tip */}
                 {result.platformTip && (
-                  <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                    <h4 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                      <Target className="w-4 h-4 text-primary" />
-                      {platform} Pro Tip
-                    </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {result.platformTip}
-                    </p>
+                  <div className="card-surface p-6 animate-fade-in border-l-4 border-blue-500" style={{ animationDelay: "0.2s" }}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-blue-500/10 rounded-lg">
+                        <Target className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-heading text-base font-bold text-foreground">
+                          {platform} Pro Strategy
+                        </h4>
+                        <p className="text-xs text-muted-foreground">Platform-specific optimization</p>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-blue-500/5 rounded-lg border border-blue-500/20">
+                      <p className="text-sm text-foreground leading-relaxed font-medium">
+                        {result.platformTip}
+                      </p>
+                    </div>
                   </div>
                 )}
 
                 {/* Predicted Engagement */}
-                <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                  <h4 className="font-heading text-sm font-bold text-foreground mb-3">
-                    Predicted Engagement
-                  </h4>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className={`px-4 py-2 rounded-lg border font-bold text-sm ${getEngagementColor(result.engagementPrediction)}`}>
-                      {result.engagementPrediction}
+                <div className="card-surface p-6 animate-fade-in border-l-4 border-purple-500" style={{ animationDelay: "0.3s" }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-purple-500/10 rounded-lg">
+                      <TrendingUp className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-heading text-base font-bold text-foreground">
+                        Engagement Forecast
+                      </h4>
+                      <p className="text-xs text-muted-foreground">AI-powered prediction</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mb-4">
+                    <span className={`px-6 py-3 rounded-xl border-2 font-bold text-lg ${getEngagementColor(result.engagementPrediction)}`}>
+                      {result.engagementPrediction} Engagement
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {result.engagementReason}
-                  </p>
+                  <div className="p-4 bg-purple-500/5 rounded-lg border border-purple-500/20">
+                    <p className="text-sm text-foreground leading-relaxed font-medium">
+                      {result.engagementReason}
+                    </p>
+                  </div>
                 </div>
               </>
             )}
@@ -373,59 +406,77 @@ const ContentAnalyzer = () => {
             {activeTab === "metrics" && (
               <>
                 {/* Metric Cards Grid */}
-                <div className="grid grid-cols-2 gap-3 animate-fade-in">
-                  <div className="card-surface p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Eye className="w-4 h-4 text-blue-500" />
-                      <span className="text-xs font-medium text-muted-foreground">Readability</span>
+                <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                  <div className="card-surface p-5 border-l-4 border-blue-500">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Eye className="w-5 h-5 text-blue-500" />
+                      <span className="text-sm font-bold text-foreground">Readability</span>
                     </div>
-                    <p className={`text-2xl font-bold ${getMetricColor(result.readabilityScore || 50)}`}>
+                    <p className={`text-3xl font-bold ${getMetricColor(result.readabilityScore || 50)}`}>
                       {result.readabilityScore || 50}%
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(result.readabilityScore || 50) >= 70 ? 'Easy to read' : (result.readabilityScore || 50) >= 40 ? 'Moderate clarity' : 'Needs simplification'}
                     </p>
                   </div>
                   
-                  <div className="card-surface p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Heart className="w-4 h-4 text-pink-500" />
-                      <span className="text-xs font-medium text-muted-foreground">Sentiment</span>
+                  <div className="card-surface p-5 border-l-4 border-pink-500">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Heart className="w-5 h-5 text-pink-500" />
+                      <span className="text-sm font-bold text-foreground">Sentiment</span>
                     </div>
-                    <p className={`text-2xl font-bold ${getSentimentColor(result.sentimentScore || 0)}`}>
+                    <p className={`text-3xl font-bold ${getSentimentColor(result.sentimentScore || 0)}`}>
                       {result.sentimentScore || 0}
                     </p>
-                  </div>
-
-                  <div className="card-surface p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap className="w-4 h-4 text-yellow-500" />
-                      <span className="text-xs font-medium text-muted-foreground">Viral Potential</span>
-                    </div>
-                    <p className={`text-2xl font-bold ${getMetricColor(result.viralPotential || 30)}`}>
-                      {result.viralPotential || 30}%
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(result.sentimentScore || 0) > 20 ? 'Very positive' : (result.sentimentScore || 0) > -20 ? 'Neutral tone' : 'Negative tone'}
                     </p>
                   </div>
 
-                  <div className="card-surface p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Target className="w-4 h-4 text-green-500" />
-                      <span className="text-xs font-medium text-muted-foreground">Brand Alignment</span>
+                  <div className="card-surface p-5 border-l-4 border-yellow-500">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Zap className="w-5 h-5 text-yellow-500" />
+                      <span className="text-sm font-bold text-foreground">Viral Potential</span>
                     </div>
-                    <p className={`text-2xl font-bold ${getMetricColor(result.brandAlignment || 50)}`}>
+                    <p className={`text-3xl font-bold ${getMetricColor(result.viralPotential || 30)}`}>
+                      {result.viralPotential || 30}%
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(result.viralPotential || 30) >= 70 ? 'High viral chance' : (result.viralPotential || 30) >= 40 ? 'Moderate potential' : 'Low viral chance'}
+                    </p>
+                  </div>
+
+                  <div className="card-surface p-5 border-l-4 border-green-500">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Target className="w-5 h-5 text-green-500" />
+                      <span className="text-sm font-bold text-foreground">Brand Alignment</span>
+                    </div>
+                    <p className={`text-3xl font-bold ${getMetricColor(result.brandAlignment || 50)}`}>
                       {result.brandAlignment || 50}%
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(result.brandAlignment || 50) >= 70 ? 'Strong brand fit' : (result.brandAlignment || 50) >= 40 ? 'Decent alignment' : 'Weak brand match'}
                     </p>
                   </div>
                 </div>
 
                 {/* Keyword Density */}
                 {result.keywordDensity && Object.keys(result.keywordDensity).length > 0 && (
-                  <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.15s" }}>
-                    <h4 className="font-heading text-sm font-bold text-foreground mb-4">
-                      Keyword Density
+                  <div className="card-surface p-6 animate-fade-in border-l-4 border-orange-500" style={{ animationDelay: "0.15s" }}>
+                    <h4 className="font-heading text-base font-bold text-foreground mb-4 flex items-center gap-2">
+                      <span className="text-xl">🔑</span>
+                      Top Keywords
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {Object.entries(result.keywordDensity).slice(0, 5).map(([keyword, density], index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="text-sm text-foreground">{keyword}</span>
-                          <span className="text-sm text-muted-foreground">{density}%</span>
+                        <div key={index} className="flex justify-between items-center p-3 bg-orange-500/5 rounded-lg border border-orange-500/20">
+                          <span className="text-sm font-bold text-foreground">{keyword}</span>
+                          <div className="flex items-center gap-3">
+                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                              <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${density}%` }}></div>
+                            </div>
+                            <span className="text-sm font-bold text-orange-500 w-12 text-right">{density}%</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -433,16 +484,16 @@ const ContentAnalyzer = () => {
                 )}
 
                 {/* Optimal Posting Times */}
-                <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                  <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-primary" />
-                    Optimal Posting Times ({region})
+                <div className="card-surface p-6 animate-fade-in border-l-4 border-cyan-500" style={{ animationDelay: "0.3s" }}>
+                  <h4 className="font-heading text-base font-bold text-foreground mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-cyan-500" />
+                    Best Posting Times ({region})
                   </h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {(result.optimalPostingTimes || ["9:00 AM", "1:00 PM", "7:00 PM"]).map((time, index) => (
-                      <span key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                        {time}
-                      </span>
+                      <div key={index} className="p-3 bg-cyan-500/10 border-2 border-cyan-500/30 rounded-lg text-center">
+                        <p className="text-lg font-bold text-cyan-500">{time}</p>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -453,16 +504,20 @@ const ContentAnalyzer = () => {
             {activeTab === "optimization" && (
               <>
                 {/* Hashtag Recommendations */}
-                <div className="card-surface p-5 animate-fade-in">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-heading text-sm font-bold text-foreground">
-                      Hashtag Recommendations
-                    </h4>
+                <div className="card-surface p-6 animate-fade-in border-l-4 border-purple-500">
+                  <div className="flex justify-between items-center mb-5">
+                    <div>
+                      <h4 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
+                        <span className="text-xl">#️⃣</span>
+                        Trending Hashtags
+                      </h4>
+                      <p className="text-xs text-muted-foreground mt-1">{result.hashtags.length} optimized hashtags</p>
+                    </div>
                     <button
                       onClick={copyAllHashtags}
-                      className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                      className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:scale-105"
                     >
-                      <Copy className="w-3 h-3" />
+                      <Copy className="w-4 h-4" />
                       Copy All
                     </button>
                   </div>
@@ -471,11 +526,11 @@ const ContentAnalyzer = () => {
                       <button
                         key={index}
                         onClick={() => copyHashtag(hashtag)}
-                        className="px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-xs font-medium transition-all hover:scale-105 flex items-center gap-1.5"
+                        className="px-4 py-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border-2 border-purple-500/30 text-purple-500 text-sm font-bold transition-all hover:scale-105 flex items-center gap-2"
                       >
                         {hashtag}
                         {copiedHashtag === hashtag ? (
-                          <Check className="w-3 h-3" />
+                          <Check className="w-4 h-4" />
                         ) : (
                           <Copy className="w-3 h-3 opacity-50" />
                         )}
@@ -486,32 +541,56 @@ const ContentAnalyzer = () => {
 
                 {/* Competitor Analysis */}
                 {result.competitorAnalysis && (
-                  <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.15s" }}>
-                    <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-primary" />
-                      Competitor Analysis
-                    </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {result.competitorAnalysis}
-                    </p>
+                  <div className="card-surface p-6 animate-fade-in border-l-4 border-indigo-500" style={{ animationDelay: "0.15s" }}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-indigo-500/10 rounded-lg">
+                        <TrendingUp className="w-5 h-5 text-indigo-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-heading text-base font-bold text-foreground">
+                          Competitive Analysis
+                        </h4>
+                        <p className="text-xs text-muted-foreground">How you compare to trending content</p>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-indigo-500/5 rounded-lg border border-indigo-500/20">
+                      <p className="text-sm text-foreground leading-relaxed font-medium">
+                        {result.competitorAnalysis}
+                      </p>
+                    </div>
                   </div>
                 )}
 
                 {/* Call-to-Action Strength */}
-                <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                  <h4 className="font-heading text-sm font-bold text-foreground mb-4">
-                    Call-to-Action Effectiveness
-                  </h4>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all duration-1000"
-                        style={{ width: `${result.callToActionStrength || 40}%` }}
-                      ></div>
+                <div className="card-surface p-6 animate-fade-in border-l-4 border-emerald-500" style={{ animationDelay: "0.3s" }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-emerald-500/10 rounded-lg">
+                      <Target className="w-5 h-5 text-emerald-500" />
                     </div>
-                    <span className={`text-sm font-bold ${getMetricColor(result.callToActionStrength || 40)}`}>
-                      {result.callToActionStrength || 40}%
-                    </span>
+                    <div>
+                      <h4 className="font-heading text-base font-bold text-foreground">
+                        Call-to-Action Power
+                      </h4>
+                      <p className="text-xs text-muted-foreground">Conversion effectiveness score</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="bg-gradient-to-r from-emerald-500 to-green-500 h-3 rounded-full transition-all duration-1000"
+                          style={{ width: `${result.callToActionStrength || 40}%` }}
+                        ></div>
+                      </div>
+                      <span className={`text-2xl font-bold ${getMetricColor(result.callToActionStrength || 40)} min-w-[60px] text-right`}>
+                        {result.callToActionStrength || 40}%
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {(result.callToActionStrength || 40) >= 70 ? '🚀 Strong CTA - High conversion potential' : 
+                       (result.callToActionStrength || 40) >= 40 ? '💡 Moderate CTA - Room for improvement' : 
+                       '⚠️ Weak CTA - Add clear action steps'}
+                    </p>
                   </div>
                 </div>
               </>
