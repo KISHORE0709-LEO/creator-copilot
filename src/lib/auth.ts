@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage, COLLECTIONS } from "./firebase";
@@ -120,7 +120,46 @@ export const updatePlatformStatus = async (uid: string, platformStatus: UserProf
   await updateUserProfile(uid, { platformStatus });
 };
 
+export const handleGoogleRedirectResult = async () => {
+  const result = await getRedirectResult(auth);
+  if (!result) return null;
+  const user = result.user;
+
+  const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, user.uid));
+  if (!userDoc.exists()) {
+    const defaultAvatar = getDefaultAvatarForGender(null);
+    const userProfile: UserProfile = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName || 'User',
+      photoURL: user.photoURL || defaultAvatar.url,
+      gender: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      subscription: 'free',
+      contentCount: 0,
+      socialLinks: { instagram: '', youtube: '', twitter: '', linkedin: '', tiktok: '', facebook: '' },
+      platformStatus: {
+        instagram: { active: false, followers: 0 },
+        youtube: { active: false, followers: 0 },
+        twitter: { active: false, followers: 0 },
+        linkedin: { active: false, followers: 0 },
+        tiktok: { active: false, followers: 0 },
+        facebook: { active: false, followers: 0 }
+      },
+      preferences: { theme: 'dark', notifications: true }
+    };
+    await setDoc(doc(db, COLLECTIONS.USERS, user.uid), userProfile);
+  }
+  return user;
+};
+
 export const signInWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  await signInWithRedirect(auth, provider);
+};
+
+export const signInWithGooglePopup = async () => {
   const provider = new GoogleAuthProvider();
   const userCredential = await signInWithPopup(auth, provider);
   const user = userCredential.user;

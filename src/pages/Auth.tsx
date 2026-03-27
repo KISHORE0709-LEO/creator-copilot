@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
-import { signUp, signIn, signInWithGoogle } from "@/lib/auth";
+import { signUp, signIn, signInWithGoogle, handleGoogleRedirectResult } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
@@ -18,6 +18,22 @@ const Auth = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Handle Google redirect result on page load
+  useEffect(() => {
+    handleGoogleRedirectResult()
+      .then((user) => {
+        if (user) {
+          toast({ title: "Signed in with Google!" });
+          navigate("/dashboard");
+        }
+      })
+      .catch((error: any) => {
+        if (error?.code !== 'auth/no-auth-event') {
+          toast({ title: "Google Sign-In Error", description: error.message, variant: "destructive" });
+        }
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
