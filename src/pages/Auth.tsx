@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
-import { signUp, signIn, signInWithGoogle, handleGoogleRedirectResult } from "@/lib/auth";
+import { signUp, signIn, signInWithGoogle, signInWithGooglePopup, handleGoogleRedirectResult } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "signin";
   const [tab, setTab] = useState<"signin" | "signup">(defaultTab as any);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({ 
     name: "", 
     email: "", 
@@ -18,6 +19,22 @@ const Auth = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, userProfile, loading } = useAuth();
+
+  console.debug('Auth page mounted - searchParams:', Object.fromEntries(searchParams.entries()), 'user:', user, 'loading:', loading);
+
+  // Redirect already logged-in users
+    useEffect(() => {
+      console.debug('Auth useEffect redirect check - loading:', loading, 'user:', user, 'userProfile:', userProfile, 'tab:', defaultTab);
+      // If a `tab` query param is present we assume the user intentionally opened the auth UI
+      // (e.g., clicked Sign In / Get Started). In that case do NOT auto-redirect to the dashboard
+      // even if a Firebase user exists — this lets users choose accounts or re-auth.
+      const explicitTab = searchParams.get('tab');
+      if (!loading && user && userProfile && !explicitTab) {
+        console.debug('Auth: user and profile present and no explicit tab, redirecting to /dashboard');
+        navigate("/dashboard", { replace: true });
+      }
+    }, [user, userProfile, loading, searchParams]);
 
   // Handle Google redirect result on page load
   useEffect(() => {
@@ -37,7 +54,7 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     try {
       if (tab === "signup") {
         await signUp(formData.email, formData.password, formData.name, formData.gender);
@@ -50,15 +67,18 @@ const Auth = () => {
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
-      toast({ title: "Signed in with Google!" });
-      navigate("/dashboard");
+      // Use popup sign-in to avoid redirecting back to the auth page with query params
+      const user = await signInWithGooglePopup();
+      if (user) {
+        toast({ title: "Signed in with Google!" });
+        navigate("/dashboard");
+      }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -169,10 +189,10 @@ const Auth = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitting}
               className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {submitting ? (
                 <span className="dot-bounce">
                   <span /><span /><span />
                 </span>
